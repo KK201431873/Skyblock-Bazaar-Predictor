@@ -3,7 +3,9 @@ import numpy as np
 import requests
 import logging
 
+from datetime import datetime, timezone
 from config import config
+from pathlib import Path
 
 class BazaarAPI:
     """Manages bazaar data collection."""
@@ -64,38 +66,21 @@ class BazaarAPI:
             logging.error(f"Unexpected error: {e}")
         return -1, pd.DataFrame()
 
-    def write_data_frame(self, frame: pd.DataFrame) -> None:
-        """Write one data frame to parquet dataset."""
-        date_str = datetime.fromtimestamp(
-            
-        )
+    def write_data_frame(self, time: int, df: pd.DataFrame) -> None:
+        """
+        Write one data frame to parquet dataset.
         
-        # else:
-        #     data_raw: dict = r.json()
-        #     products_raw: dict[str, dict] = data_raw["products"]
+        Args:
+            time (int): Timestamp in milliseconds since epoch
+            frame (pd.DataFrame): Data frame to write
+        """
+        date_str = datetime.fromtimestamp(
+            time / 1000, tz=timezone.utc
+        ).strftime("%Y-%m-%d")
 
-        #     # organize data into pydantic models
-        #     products: list[BazaarProduct] = []
+        data_dir = Path(config.DATA_DIR_PATH)
+        partition_dir = data_dir / f"date={date_str}"
+        partition_dir.mkdir(parents=True, exist_ok=True)
 
-        #     for key, product_info in products_raw.items():
-        #         quick_status = product_info["quick_status"]
-        #         products.append(BazaarProduct(
-        #             name                = key,
-        #             sell_price          = np.float32(quick_status["sellPrice"]),
-        #             sell_volume         = np.int32(quick_status["sellVolume"]),
-        #             sell_moving_week    = np.int32(quick_status["sellMovingWeek"]),
-        #             sell_orders         = np.int16(quick_status["sellOrders"]),
-        #             buy_price           = np.float32(quick_status["buyPrice"]),
-        #             buy_volume          = np.int32(quick_status["buyVolume"]),
-        #             buy_moving_week     = np.int32(quick_status["buyMovingWeek"]),
-        #             buy_orders          = np.int16(quick_status["buyOrders"]),
-        #         ))
-
-        #     data: BazaarFrame = BazaarFrame(
-        #         time = np.int64(data_raw["lastUpdated"]),
-        #         products = products,
-        #     )
-
-        #     print(f"Num products: {data.num_products}")
-        #     print(f"Data frame size: {data.obj_size} B")
-        #     # print(len(r.text))
+        file_path = partition_dir / f"{time}.parquet"
+        df.to_parquet(file_path, engine="pyarrow", index=False)
