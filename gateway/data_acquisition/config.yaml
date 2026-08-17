@@ -1,0 +1,20 @@
+BAZAAR_API_URL: "https://api.hypixel.net/v2/skyblock/bazaar"
+
+# database settings
+DB_LONGTERM_PATH: "data/long_term/longterm.duckdb"
+DB_SHORTTERM_PATH: "data/short_term/shortterm.duckdb"
+
+DB_LONGTERM_SNAPSHOT_PATH: "data/long_term/longterm.snapshot.duckdb"
+DB_SHORTTERM_SNAPSHOT_PATH: "data/short_term/shortterm.snapshot.duckdb"
+
+# data acquisition settings
+DATA_LONGTERM_DIR_PATH: "data/long_term"
+DATA_SHORTTERM_DIR_PATH: "data/short_term"
+
+DATA_LONGTERM_COLLECT_INTERVAL: 20 * 60  # seconds
+
+DATA_SHORTTERM_COLLECT_INTERVAL: 21  # seconds
+DATA_SHORTTERM_LIFETIME: 24 * 60 * 60  # short-term data expires after a day
+DATA_SHORTTERM_PRUNE_INTERVAL: 21 # seconds
+
+DATA_COLLECT_RETRY_COOLDOWN: 5.0 # seconds

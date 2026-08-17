@@ -4,3 +4,8 @@ requests
 pydantic
 pyyaml
 pyarrow
+tk
+simpleeval
+fastapi[standard]
+uvicorn
+duckdb
