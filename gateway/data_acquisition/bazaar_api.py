@@ -4,7 +4,7 @@ import requests
 import logging
 
 from datetime import datetime, timezone
-from config import config
+from data_acquisition.config import config
 from pathlib import Path
 
 class BazaarAPI:
@@ -66,20 +66,20 @@ class BazaarAPI:
             logging.error(f"Unexpected error: {e}")
         return -1, pd.DataFrame()
 
-    def write_data_frame(self, time: int, df: pd.DataFrame) -> None:
+    def write_data_frame(self, time: int, df: pd.DataFrame, dir_path: Path) -> None:
         """
         Write one data frame to parquet dataset.
         
         Args:
             time (int): Timestamp in milliseconds since epoch
             frame (pd.DataFrame): Data frame to write
+            dir_path (Path): Absolute path to data directory
         """
         date_str = datetime.fromtimestamp(
             time / 1000, tz=timezone.utc
         ).strftime("%Y-%m-%d")
 
-        data_dir = Path(config.DATA_DIR_PATH)
-        partition_dir = data_dir / f"date={date_str}"
+        partition_dir = dir_path / f"date={date_str}"
         partition_dir.mkdir(parents=True, exist_ok=True)
 
         file_path = partition_dir / f"{time}.parquet"

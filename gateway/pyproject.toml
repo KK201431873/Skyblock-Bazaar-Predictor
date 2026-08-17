@@ -1,0 +1,12 @@
+[tool.fastapi]
+entrypoint = "main:app"
+
+[project]
+name = "SkyCharts"
+version = "0.1.0"
+
+[project.scripts]
+collect-data-loop = "data_acquisition.collect_data_loop:main"
+
+[tool.setuptools]
+packages = ["data_acquisition"]

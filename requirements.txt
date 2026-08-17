@@ -6,4 +6,6 @@ pyyaml
 pyarrow
 tk
 simpleeval
-fastapi
+fastapi[standard]
+uvicorn
+duckdb

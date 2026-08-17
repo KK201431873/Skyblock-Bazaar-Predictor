@@ -1,5 +1,0 @@
-BAZAAR_API_URL: "https://api.hypixel.net/v2/skyblock/bazaar"
-
-DATA_DIR_PATH: "data"
-
-DATA_COLLECTION_INTERVAL: 1 * 60  # in seconds
