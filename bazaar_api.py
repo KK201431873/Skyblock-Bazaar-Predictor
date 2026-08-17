@@ -83,4 +83,4 @@ class BazaarAPI:
         partition_dir.mkdir(parents=True, exist_ok=True)
 
         file_path = partition_dir / f"{time}.parquet"
-        df.to_parquet(file_path, engine="pyarrow", index=False)
+        df.to_parquet(file_path, engine="pyarrow", index=False, compression="zstd")

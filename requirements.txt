@@ -4,3 +4,6 @@ requests
 pydantic
 pyyaml
 pyarrow
+tk
+simpleeval
+fastapi
