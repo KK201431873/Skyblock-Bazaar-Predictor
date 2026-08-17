@@ -1,19 +1,21 @@
 import time
 import logging
-import os
-import stat
+import sys
+import signal
 
-from data_acquisition.bazaar_api import BazaarAPI
+from data_acquisition.bazaar_api import BazaarAPI, DBType
 from data_acquisition.config import config
-from pathlib import Path
 
 logger = logging.getLogger("collect_data_loop")
 logger.setLevel(logging.INFO)
 
-DATALT_DIR_PATH = Path(config.DATA_LONGTERM_DIR_PATH).resolve()
-DATAST_DIR_PATH = Path(config.DATA_SHORTTERM_DIR_PATH).resolve()
-
 bz = BazaarAPI()
+
+def handle_close(signum, frame):
+    bz.close()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, handle_close)
 
 def main():
     epoch_ms = int(time.time() * 1000)
@@ -52,11 +54,13 @@ def main():
                     continue
 
                 if collect_lt:
-                    bz.write_data_frame(timestamp, df, DATALT_DIR_PATH)
-                    logger.info(f"Wrote long_term/../{timestamp}.parquet ({epoch_ms})")
+                    bz.write_data_frame(timestamp, df, DBType.LONG_TERM)
+                    bz.snapshot_db(DBType.LONG_TERM)
+                    logger.info(f"Wrote & snapshotted long_term/../{timestamp}.parquet ({epoch_ms})")
                 if collect_st:
-                    bz.write_data_frame(timestamp, df, DATAST_DIR_PATH)
-                    logger.info(f"Wrote short_term/../{timestamp}.parquet ({epoch_ms})")
+                    bz.write_data_frame(timestamp, df, DBType.SHORT_TERM)
+                    bz.snapshot_db(DBType.SHORT_TERM)
+                    logger.info(f"Wrote & snapshotted short_term/../{timestamp}.parquet ({epoch_ms})")
                 break
 
         ## Check for short-term data pruning
@@ -64,42 +68,11 @@ def main():
 
         if epoch_ms > next_data_st_prune_time:
             next_data_st_prune_time += 1e3*config.DATA_SHORTTERM_PRUNE_INTERVAL
-
-            cutoff_time = epoch_ms - 1e3*config.DATA_SHORTTERM_LIFETIME
-            pruned_file_ct = 0
-
-            subdirs = [
-                f for f in DATAST_DIR_PATH.iterdir() if f.is_dir()
-            ]
-
-            for dir in subdirs:
-                dir_pruned_ct = 0
-                files = [
-                    f for f in dir.iterdir()
-                    if f.is_file()
-                    and (f.suffix == ".parquet") 
-                    and f.stem.isdigit()
-                ]
-
-                for file in files:
-                    if int(file.stem) < cutoff_time:
-                        file.unlink()
-                        pruned_file_ct += 1
-                        dir_pruned_ct += 1
-
-                if dir_pruned_ct == len(files):
-                    # dir is now empty
-                    try:
-                        os.chmod(dir, stat.S_IWRITE)  # add write permission
-                        dir.rmdir()
-                    except:
-                        logger.warning(f"Failed to delete dir {dir.name}")
-                        pass  # windows might lock the dir, will be cleaned next time
-
-            logger.info(f"Pruned {pruned_file_ct} files in data/short_term")
+            bz.prune_short_term_data(epoch_ms)
 
         # yield cpu
         time.sleep(0.1)
+
 
 if __name__ == "__main__":
     main()

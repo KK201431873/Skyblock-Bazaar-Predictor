@@ -10,6 +10,18 @@ class Config(BaseModel):
     BAZAAR_API_URL: str
     """URL to fetch latest bazaar data"""
 
+    DB_LONGTERM_PATH: str
+    """Path to long-term DuckDB database"""
+
+    DB_SHORTTERM_PATH: str
+    """Path to short-term DuckDB database"""
+
+    DB_LONGTERM_SNAPSHOT_PATH: str
+    """Path to readable copy of long-term DuckDB database"""
+
+    DB_SHORTTERM_SNAPSHOT_PATH: str
+    """Path to readable copy of short-term DuckDB database"""
+
     DATA_LONGTERM_DIR_PATH: str
     """Parent directory for storing long-term dataset"""
 
