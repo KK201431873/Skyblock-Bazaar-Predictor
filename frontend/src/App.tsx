@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchHistories, fetchProducts, type ProductPoint } from "./api.ts";
 import PriceWidget from "./components/PriceWidget.tsx";
+import KdjWidget from "./components/KdjWidget.tsx";
 import EmptySlot from "./components/EmptySlot.tsx";
 import AddWidgetDialog from "./components/AddWidgetDialog.tsx";
+import LastUpdated from "./components/LastUpdated.tsx";
 import { loadLayout, saveLayout, clearWidgetSettings, loadWidgetSettings } from "./layoutStorage.ts";
 import type { Slot, WidgetType } from "./types.ts";
 
-const COLUMNS = 4;
+const COLUMNS = 3;
 const INITIAL_ROWS = 3;
 
 const GRID_GAP_PX = 8;
@@ -108,6 +110,7 @@ export default function App() {
   const [histories, setHistories] = useState<Histories>({});
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
 
   const [dialogSlotIndex, setDialogSlotIndex] = useState<number | null>(null);
 
@@ -172,6 +175,7 @@ export default function App() {
           names: replace ? new Set(names) : new Set([...loadedRef.current.names, ...names]),
         };
         setHistoryError(null);
+        setLastUpdated(Date.now());
       } catch (e) {
         if (requestId === requestIdRef.current) setHistoryError((e as Error).message);
       } finally {
@@ -273,7 +277,7 @@ export default function App() {
           ))}
         </select>
 
-        {refreshing && <span style={{ fontSize: 12, color: "#94a3b8" }}>Updating…</span>}
+        <LastUpdated timestamp={lastUpdated} refreshing={refreshing} />
         {error && <span style={{ color: "crimson", fontSize: 13, marginLeft: 8 }}>{error}</span>}
       </div>
 
@@ -291,6 +295,8 @@ export default function App() {
             return <EmptySlot key={i} onClick={() => setDialogSlotIndex(i)} />;
           }
           switch (slot.type) {
+            // Both widget types take the same props: App fetches per
+            // product, and each widget decides what to draw with the series.
             case "price":
               return (
                 <PriceWidget
@@ -304,8 +310,19 @@ export default function App() {
                   onRemove={removeWidget}
                 />
               );
-            // case "kdj":
-            //   return <KdjWidget key={slot.id} ... />;
+            case "kdj":
+              return (
+                <KdjWidget
+                  key={slot.id}
+                  id={slot.id}
+                  products={products}
+                  product={slot.product}
+                  data={slot.product ? histories[slot.product] : undefined}
+                  error={historyError}
+                  onSelectProduct={selectProduct}
+                  onRemove={removeWidget}
+                />
+              );
           }
         })}
       </div>
