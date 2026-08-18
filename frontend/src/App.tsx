@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchHistories, fetchProducts, type ProductPoint } from "./api.ts";
 import PriceWidget from "./components/PriceWidget.tsx";
+import VolumeWidget from "./components/VolumeWidget.tsx";
 import KdjWidget from "./components/KdjWidget.tsx";
 import EmptySlot from "./components/EmptySlot.tsx";
 import AddWidgetDialog from "./components/AddWidgetDialog.tsx";
@@ -300,6 +301,19 @@ export default function App() {
             case "price":
               return (
                 <PriceWidget
+                  key={slot.id}
+                  id={slot.id}
+                  products={products}
+                  product={slot.product}
+                  data={slot.product ? histories[slot.product] : undefined}
+                  error={historyError}
+                  onSelectProduct={selectProduct}
+                  onRemove={removeWidget}
+                />
+              );
+            case "volume":
+              return (
+                <VolumeWidget
                   key={slot.id}
                   id={slot.id}
                   products={products}

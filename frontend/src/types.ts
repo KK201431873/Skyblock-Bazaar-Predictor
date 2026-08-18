@@ -1,4 +1,4 @@
-export type WidgetType = "price" | "kdj";
+export type WidgetType = "price" | "volume" | "kdj";
 
 export interface WidgetConfig {
   id: string;

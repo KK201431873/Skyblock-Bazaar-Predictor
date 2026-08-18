@@ -10,6 +10,7 @@ interface WidgetOption {
 // New widget types register here — nothing else about this dialog changes.
 const WIDGET_OPTIONS: WidgetOption[] = [
   { type: "price", label: "Price widget", description: "Sell/buy price for an item over time" },
+  { type: "volume", label: "Volume widget", description: "Sell/buy volume for an item over time" },
   { type: "kdj", label: "KDJ widget", description: "KDJ oscillator on an item's buy or sell price" },
 ];
 
