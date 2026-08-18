@@ -12,17 +12,6 @@ from pathlib import Path
 DB_LT_SNAPSHOT_PATH = Path(config.DB_LONGTERM_SNAPSHOT_PATH).resolve()
 DB_ST_SNAPSHOT_PATH = Path(config.DB_SHORTTERM_SNAPSHOT_PATH).resolve()
 
-# @asynccontextmanager
-# async def connect_dbs(app: FastAPI):
-#     """Connect to lt & st databases on startup and disconnect on close"""
-#     db_lt = duckdb.connect(config.DB_LONGTERM_SNAPSHOT_PATH, read_only=True)
-#     db_st = duckdb.connect(config.DB_SHORTTERM_SNAPSHOT_PATH, read_only=True)
-#     app.state.db_lt = db_lt
-#     app.state.db_st = db_st
-#     yield
-#     db_lt.close()
-#     db_st.close()
-
 app = FastAPI(title="SkyCharts API")
 
 app.add_middleware(
@@ -60,32 +49,43 @@ def list_products() -> list[str]:
     names.update(row["name"] for row in rows)
     return sorted(names)
 
-@app.get("/products/{name}")
-def product_data(
-    name: str,
+@app.get("/history")
+def product_histories(
+    names: list[str] = Query(...),
     start_ms: int = Query(..., ge=0),
     end_ms: int = Query(..., ge=0),
-) -> list[dict]:
+) -> dict[str, list[dict]]:
     """
-    Get product data between two given times.
+    Get data for several products between two given times.
  
     Args:
         name (str): Identifier string for the product
         start_ms (int): Lower bound as milliseconds since epoch
         end_ms (int): Upper bound as milliseconds since epoch
+    
+    Returns:
+        A dictionary mapping a product name to a list of data records
     """
+    unique_names = sorted(set(names))
+    if not unique_names:
+        raise HTTPException(status_code=422, detail="At least one name is required")
+    
     range_seconds = (end_ms - start_ms) / 1000.0
     if range_seconds <= config.DATA_SHORTTERM_LIFETIME:
         snapshot_path = DB_ST_SNAPSHOT_PATH
     else:
         snapshot_path = DB_LT_SNAPSHOT_PATH
- 
+
+    placeholders = ", ".join("?" for _ in unique_names)
     sql = f"""
-        SELECT time, sell_price, sell_volume, buy_price, buy_volume
+        SELECT name, time, sell_price, sell_volume, buy_price, buy_volume
         FROM bazaar_data
-        WHERE name = ? AND time >= ? AND time < ?
-        ORDER BY time
+        WHERE name IN ({placeholders}) AND time >= ? AND time < ?
+        ORDER BY name, time
     """
-    rows = query(snapshot_path, sql, [name, start_ms, end_ms])
+    rows = query(snapshot_path, sql, [*unique_names, start_ms, end_ms])
  
-    return rows
+    histories: dict[str, list[dict]] = {name: [] for name in unique_names}
+    for row in rows:
+        histories[row.pop("name")].append(row)
+    return histories
